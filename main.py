@@ -1,6 +1,7 @@
 import cv2
 import time
 import os
+import csv
 
 
 def try_capture(index):
@@ -32,6 +33,16 @@ ID_MAP = {
 
 # Initialize current ID
 current_id = 'Forward'
+
+# CSV file path
+csv_file = 'dataset.csv'
+
+# Create or append to the CSV file
+csv_exists = os.path.exists(csv_file)
+with open(csv_file, 'a', newline='') as file:
+    writer = csv.writer(file)
+    if not csv_exists:
+        writer.writerow(['ID', 'Image_Path'])  # Write header if file is new
 
 # Click event handler
 
@@ -72,9 +83,15 @@ def click_event(event, x, y, flags, param):
                            top_left_x:bottom_right_x]
 
             # Generate a unique filename with current ID as prefix
-            filename = f"images/{current_id}_{int(time.time())}.png"
+            timestamp = int(time.time())
+            filename = f"images/{current_id}_{timestamp}.png"
             cv2.imwrite(filename, region)
             print(f"Image saved as {filename}")
+
+            # Append to CSV file
+            with open(csv_file, 'a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([current_id, filename])
 
             # Draw the rectangle on the frame (for visualization)
             cv2.rectangle(frame, (top_left_x, top_left_y),
@@ -98,6 +115,7 @@ print("Camera opened successfully")
 
 # Create a named window and set mouse callback
 cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
+cv2.setMouseCallback('frame', click_event)
 
 while True:
     # Capture frame-by-frame
@@ -112,17 +130,9 @@ while True:
         print("Invalid frame dimensions")
         continue
 
-    # Display current ID in the bottom left corner
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    bottom_left_corner = (10, frame.shape[0] - 10)
-    font_scale = 0.5
-    font_thickness = 1
+    # Display the current ID
     cv2.putText(frame, f'Current ID: {
-                current_id}', bottom_left_corner, font, font_scale, (255, 255, 255), font_thickness)
-
-    # Set mouse callback with lambda function to pass frame
-    cv2.setMouseCallback('frame', lambda event, x, y, flags,
-                         param: click_event(event, x, y, flags, param))
+                current_id}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
     # Display the initial frame
     cv2.imshow('frame', frame)
